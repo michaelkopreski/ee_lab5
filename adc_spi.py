@@ -96,7 +96,12 @@ class Oscilloscope(Button):
             
         self.init_button(trig_pin,pull_up,bouncetime)
 
+        self.fig, self.sub = plt.subplots()
+    def get_pt(self):
+        pass
     def plot(self,freq):
+        pass
+        
         
         
 
