@@ -2,6 +2,7 @@ import RPi.GPIO as GPIO
 import time
 import spidev
 from matplotlib import pyplot as plt
+import numpy as np
 
 class Button():
     def __init__(self,pin,pull_up=True,bouncetime=20):
@@ -79,7 +80,7 @@ class ADC():
         return result
 
 class Oscilloscope(Button):
-    def __init__(self,adc,pull_up=True,bouncetime=20,trig_pin):
+    def __init__(self,adc,trig_pin,pull_up=True,bouncetime=20):
         self.timeout = timeout
         self.adc = adc
 
@@ -97,17 +98,48 @@ class Oscilloscope(Button):
         self.init_button(trig_pin,pull_up,bouncetime)
 
         self.fig, self.sub = plt.subplots()
-    def get_pt(self):
-        pass
-    def plot(self,freq):
+    def get_pts(self,timeout,freq):
+        start = time.time()
+        npts = timeout*freq
+        t = np.zeros(npts)
+        v = np.zeros(npts)
+
+        last = start
+        while True:
+            for i in range(npts):
+                if self.button_state:
+                    break
+                tval = time.time()
+                t[i] = tval
+                v[i] = adc.get_conversion()
+
+                now = time.time()
+                elapsed = last - now
+                last = now
+                try:
+                    time.sleep(1/freq - elapsed)
+                except ValueError:
+                    pass
+            self.plot(t,v)
+
+    def plot(self,freq,timeout):
         pass
         
         
         
 
 GPIO.setmode(GPIO.BCM)
-adc = ADC()
 
-# doo stuff
+adc = ADC()
+osc = Oscilloscope(adc,trig_pin)
+off = Button(button_pin)
+
+while True:
+    while not off.button_change:
+        time.sleep(0.1)
+    off.reset()
+    while not off.button_change:
+        osc.get_pts(1,100)
+    off.reset()
             
 GPIO.cleanup()
